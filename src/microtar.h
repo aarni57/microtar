@@ -18,6 +18,9 @@ extern "C"
 
 #define MTAR_VERSION "0.1.0"
 
+#define MTAR_STRERROR_ENABLED 0
+#define MTAR_WRITING_ENABLED 0
+
 enum {
   MTAR_ESUCCESS     =  0,
   MTAR_EFAILURE     = -1,
@@ -41,11 +44,11 @@ enum {
 };
 
 typedef struct {
-  unsigned mode;
-  unsigned owner;
-  unsigned size;
-  unsigned mtime;
-  unsigned type;
+  uint32_t mode;
+  uint32_t owner;
+  uint32_t size;
+  uint32_t mtime;
+  uint32_t type;
   char name[100];
   char linkname[100];
 } mtar_header_t;
@@ -54,34 +57,39 @@ typedef struct {
 typedef struct mtar_t mtar_t;
 
 struct mtar_t {
-  int (*read)(mtar_t *tar, void *data, unsigned size);
-  int (*write)(mtar_t *tar, const void *data, unsigned size);
-  int (*seek)(mtar_t *tar, unsigned pos);
+  int (*read)(mtar_t *tar, void *data, size_t size);
+#if MTAR_WRITING_ENABLED
+  int (*write)(mtar_t *tar, const void *data, size_t size);
+#endif
+  int (*seek)(mtar_t *tar, size_t pos);
   int (*close)(mtar_t *tar);
   void *stream;
-  unsigned pos;
-  unsigned remaining_data;
-  unsigned last_header;
+  size_t pos;
+  size_t remaining_data;
+  size_t last_header;
 };
 
-
+#if MTAR_STRERROR_ENABLED
 const char* mtar_strerror(int err);
+#endif
 
 int mtar_open(mtar_t *tar, const char *filename, const char *mode);
 int mtar_close(mtar_t *tar);
 
-int mtar_seek(mtar_t *tar, unsigned pos);
+int mtar_seek(mtar_t *tar, size_t pos);
 int mtar_rewind(mtar_t *tar);
 int mtar_next(mtar_t *tar);
 int mtar_find(mtar_t *tar, const char *name, mtar_header_t *h);
 int mtar_read_header(mtar_t *tar, mtar_header_t *h);
-int mtar_read_data(mtar_t *tar, void *ptr, unsigned size);
+int mtar_read_data(mtar_t *tar, void *ptr, size_t size);
 
+#if MTAR_WRITING_ENABLED
 int mtar_write_header(mtar_t *tar, const mtar_header_t *h);
-int mtar_write_file_header(mtar_t *tar, const char *name, unsigned size);
+int mtar_write_file_header(mtar_t *tar, const char *name, size_t size);
 int mtar_write_dir_header(mtar_t *tar, const char *name);
-int mtar_write_data(mtar_t *tar, const void *data, unsigned size);
+int mtar_write_data(mtar_t *tar, const void *data, size_t size);
 int mtar_finalize(mtar_t *tar);
+#endif
 
 #ifdef __cplusplus
 }
